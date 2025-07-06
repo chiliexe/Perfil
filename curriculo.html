@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currículo Interativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral (Beige, Dark Slate, Muted Teal) -->
+    <!-- Application Structure Plan: The SPA will use a single-page, multi-section layout navigated by a fixed left-sidebar, which is more engaging than a linear document. This structure was chosen because it allows recruiters to quickly jump to the sections they are most interested in (e.g., Skills, Experience) without scrolling. The user flow is non-linear and user-driven. Key interactions include: 1) Filtering skills by category (Backend, Frontend, etc.) to dynamically update a bar chart visualization, providing a quick assessment of capabilities. 2) An expandable timeline for professional experience, keeping the initial view clean and focused. 3) A card-based gallery for projects, allowing for easy scanning. This design transforms a static CV into an interactive professional summary, enhancing usability and information discovery. -->
+    <!-- Visualization & Content Choices:
+- Personal Info (Header): Goal: Inform. Method: Prominent text section with social links. Interaction: Clickable links. Justification: Quick access to contact info.
+- Resumo: Goal: Inform. Method: Clear, concise text block. Justification: Provides a quick professional summary.
+- Habilidades: Goal: Compare/Inform. Method: Horizontal Bar Chart (Chart.js) grouped by category (Linguagens, Backend, etc.). Interaction: Filter buttons to dynamically update the chart data. Justification: Visualizing skills is more impactful and easier to parse than a long list. It allows recruiters to see strengths in specific areas quickly.
+- Experiência: Goal: Organize/Inform. Method: Vertical timeline with collapsible sections (HTML/CSS/JS). Interaction: Clicking on a job title expands/collapses details. Justification: Presents a career path chronologically without overwhelming the user with text upfront.
+- Projetos: Goal: Inform/Demonstrate. Method: Grid of interactive cards (HTML/CSS). Interaction: Hover effects and clickable links to GitHub/live demo. Justification: A gallery format is standard and effective for showcasing project work.
+- Formação/Cursos: Goal: Inform. Method: Simple chronological lists. Justification: This information is straightforward and doesn't require complex visualization.
+- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            color: #292524; /* stone-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .timeline-item-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .timeline-item.open .timeline-item-content {
+            max-height: 500px; /* Adjust as needed */
+        }
+        .nav-link.active {
+            background-color: #d6d3d1; /* stone-300 */
+            color: #1c1917; /* stone-900 */
+        }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row">
+
+    <!-- Barra de Navegação Lateral -->
+    <nav class="w-full md:w-64 bg-stone-200 p-4 md:h-screen md:sticky top-0 flex flex-row md:flex-col justify-around md:justify-start">
+        <div class="text-center mb-0 md:mb-12">
+            <h1 class="text-2xl font-bold text-stone-900">[Seu Nome]</h1>
+            <p class="text-sm text-stone-600">[Seu Cargo]</p>
+        </div>
+        <ul class="flex flex-row md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+            <li><a href="#sobre" class="nav-link flex items-center p-2 rounded-md hover:bg-stone-300 transition-colors">📄 <span class="hidden md:inline ml-2">Sobre Mim</span></a></li>
+            <li><a href="#habilidades" class="nav-link flex items-center p-2 rounded-md hover:bg-stone-300 transition-colors">🛠️ <span class="hidden md:inline ml-2">Habilidades</span></a></li>
+            <li><a href="#experiencia" class="nav-link flex items-center p-2 rounded-md hover:bg-stone-300 transition-colors">💼 <span class="hidden md:inline ml-2">Experiência</span></a></li>
+            <li><a href="#projetos" class="nav-link flex items-center p-2 rounded-md hover:bg-stone-300 transition-colors">📂 <span class="hidden md:inline ml-2">Projetos</span></a></li>
+            <li><a href="#formacao" class="nav-link flex items-center p-2 rounded-md hover:bg-stone-300 transition-colors">🎓 <span class="hidden md:inline ml-2">Formação</span></a></li>
+            <li><a href="#contato" class="nav-link flex items-center p-2 rounded-md hover:bg-stone-300 transition-colors">✉️ <span class="hidden md:inline ml-2">Contato</span></a></li>
+        </ul>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 p-6 md:p-10 lg:p-12">
+        
+        <!-- Seção Sobre Mim -->
+        <section id="sobre" class="mb-16 min-h-screen flex items-center">
+            <div>
+                <h2 class="text-3xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Sobre Mim</h2>
+                <p class="text-lg text-stone-700 leading-relaxed" id="resumo-profissional">
+                    <!-- Preenchido via JS -->
+                </p>
+            </div>
+        </section>
+
+        <!-- Seção Habilidades -->
+        <section id="habilidades" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Habilidades Técnicas</h2>
+            <p class="text-stone-700 mb-6">Abaixo está uma representação visual das minhas competências. Use os filtros para explorar diferentes categorias de habilidades.</p>
+            <div id="skills-filters" class="flex flex-wrap gap-2 mb-6">
+                <!-- Filtros preenchidos via JS -->
+            </div>
+            <div class="chart-container">
+                <canvas id="skillsChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Seção Experiência -->
+        <section id="experiencia" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Experiência Profissional</h2>
+             <p class="text-stone-700 mb-8">Uma linha do tempo da minha jornada profissional. Clique em cada cargo para ver mais detalhes sobre minhas responsabilidades e conquistas.</p>
+            <div id="timeline" class="relative border-l-2 border-stone-300 ml-4">
+                <!-- Timeline preenchida via JS -->
+            </div>
+        </section>
+
+        <!-- Seção Projetos -->
+        <section id="projetos" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Projetos Pessoais</h2>
+             <p class="text-stone-700 mb-8">Uma seleção de projetos que demonstram minhas habilidades na prática. Clique nos links para explorar o código-fonte ou a aplicação ao vivo.</p>
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Projetos preenchidos via JS -->
+            </div>
+        </section>
+
+        <!-- Seção Formação -->
+        <section id="formacao" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 border-b-2 border-teal-500 pb-2">Formação e Cursos</h2>
+            <div class="space-y-8">
+                <div id="education-list">
+                    <h3 class="text-2xl font-semibold mb-4 text-stone-800">Formação Acadêmica</h3>
+                    <!-- Formação preenchida via JS -->
+                </div>
+                <div id="courses-list">
+                    <h3 class="text-2xl font-semibold mb-4 text-stone-800">Cursos e Certificações</h3>
+                    <!-- Cursos preenchidos via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção Contato -->
+        <section id="contato" class="text-center">
+            <h2 class="text-3xl font-bold mb-4 border-b-2 border-teal-500 pb-2 inline-block">Contato</h2>
+            <p class="text-lg text-stone-700 mb-6">Vamos conversar! Sinta-se à vontade para entrar em contato.</p>
+            <div class="flex justify-center space-x-6 text-2xl" id="contact-links">
+                <!-- Links de contato preenchidos via JS -->
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DADOS DO CURRÍCULO (PREENCHA AQUI) ---
+            const cvData = {
+                header: {
+                    name: "[Seu Nome Completo]",
+                    title: "[Seu Cargo ou Área de Atuação]",
+                    location: "[Sua Cidade, Estado]",
+                    phone: "[Seu Telefone com DDD]",
+                    email: "[Seu E-mail Profissional]",
+                    linkedin: "https://linkedin.com/in/seu-usuario",
+                    github: "https://github.com/seu-usuario",
+                },
+                summary: "Desenvolvedor de Software com X anos de experiência em [Tecnologia A] e [Tecnologia B], com foco em [Área]. Busco integrar um time colaborativo e inovador para contribuir com soluções escaláveis, aplicando meu conhecimento em metodologias ágeis e meu entusiasmo por aprender novas tecnologias.",
+                skills: {
+                    "Linguagens": [
+                        { name: "Java", level: 90 },
+                        { name: "JavaScript", level: 85 },
+                        { name: "Ruby", level: 75 },
+                        { name: "Python", level: 70 },
+                        { name: "SQL", level: 80 },
+                    ],
+                    "Backend": [
+                        { name: "Spring Boot", level: 85 },
+                        { name: "Node.js", level: 80 },
+                        { name: "Ruby on Rails", level: 75 },
+                        { name: "RESTful APIs", level: 95 },
+                        { name: "Microsserviços", level: 70 },
+                    ],
+                    "Frontend": [
+                        { name: "HTML5 & CSS3", level: 90 },
+                        { name: "React", level: 70 },
+                        { name: "Stimulus", level: 65 },
+                        { name: "Tailwind CSS", level: 85 },
+                    ],
+                     "Ferramentas": [
+                        { name: "Git", level: 95 },
+                        { name: "Docker", level: 80 },
+                        { name: "AWS", level: 60 },
+                        { name: "Jira", level: 90 },
+                    ]
+                },
+                experience: [
+                    {
+                        role: "[Seu Cargo]",
+                        company: "[Nome da Empresa]",
+                        period: "[Mês/Ano de Início] – [Mês/Ano de Fim ou 'Atualmente']",
+                        description: [
+                            "Desenvolvi e mantive APIs RESTful usando Java e Spring Boot, resultando em uma melhora de 20% na performance das transações.",
+                            "Participei ativamente de rituais Scrum, contribuindo para entregas contínuas e alinhamento do time.",
+                            "Colaborei no design e implementação de interfaces de usuário com React e JavaScript, otimizando a experiência do cliente."
+                        ]
+                    },
+                    {
+                        role: "[Seu Cargo Anterior]",
+                        company: "[Nome da Empresa Anterior]",
+                        period: "[Mês/Ano de Início] – [Mês/Ano de Fim]",
+                        description: [
+                            "Responsável pela manutenção de sistemas legados em [Tecnologia].",
+                            "Criei scripts de automação que reduziram o tempo de tarefas manuais em 30%.",
+                        ]
+                    }
+                ],
+                projects: [
+                    {
+                        name: "[Nome do Projeto 1]",
+                        description: "Aplicação web desenvolvida em Ruby on Rails para gerenciamento de tarefas pessoais.",
+                        tech: ["Ruby on Rails", "PostgreSQL", "Stimulus"],
+                        github: "https://github.com/seu-usuario/projeto-1",
+                        live: "https://link-para-demo.com"
+                    },
+                    {
+                        name: "[Nome do Projeto 2]",
+                        description: "Microsserviço de autenticação de usuários com Java e Spring Boot.",
+                        tech: ["Java", "Spring Boot", "MySQL", "Docker"],
+                        github: "https://github.com/seu-usuario/projeto-2",
+                        live: null
+                    },
+                    {
+                        name: "[Nome do Projeto 3]",
+                        description: "Dashboard interativo de dados com React e Chart.js.",
+                        tech: ["React", "JavaScript", "Chart.js"],
+                        github: "https://github.com/seu-usuario/projeto-3",
+                        live: "https://link-para-demo-3.com"
+                    }
+                ],
+                education: [
+                    {
+                        course: "[Nome do Curso]",
+                        institution: "[Nome da Instituição de Ensino]",
+                        period: "[Ano de Início] – [Ano de Conclusão ou 'Previsão']"
+                    }
+                ],
+                courses: [
+                    {
+                        name: "Curso Completo de Ruby on Rails",
+                        institution: "Udemy",
+                        year: 2025
+                    },
+                    {
+                        name: "Certificação Certified ScrumMaster (CSM)",
+                        institution: "Scrum Alliance",
+                        year: 2023
+                    }
+                ]
+            };
+
+            // --- FUNÇÕES DE RENDERIZAÇÃO ---
+
+            function renderHeader() {
+                document.querySelector('nav h1').textContent = cvData.header.name;
+                document.querySelector('nav p').textContent = cvData.header.title;
+                document.getElementById('resumo-profissional').textContent = cvData.summary;
+
+                const contactLinks = document.getElementById('contact-links');
+                contactLinks.innerHTML = `
+                    <a href="mailto:${cvData.header.email}" class="text-stone-700 hover:text-teal-500 transition-colors" title="Email">📧</a>
+                    <a href="${cvData.header.linkedin}" target="_blank" class="text-stone-700 hover:text-teal-500 transition-colors" title="LinkedIn">💼</a>
+                    <a href="${cvData.header.github}" target="_blank" class="text-stone-700 hover:text-teal-500 transition-colors" title="GitHub">💻</a>
+                `;
+            }
+
+            function renderExperience() {
+                const timeline = document.getElementById('timeline');
+                timeline.innerHTML = cvData.experience.map(job => `
+                    <div class="timeline-item mb-8 ml-8 cursor-pointer">
+                        <div class="timeline-marker absolute -left-5 top-1 w-4 h-4 rounded-full bg-teal-500 border-4 border-stone-200"></div>
+                        <h3 class="text-xl font-semibold">${job.role}</h3>
+                        <p class="text-md text-teal-600 font-medium">${job.company}</p>
+                        <p class="text-sm text-stone-500 mb-2">${job.period}</p>
+                        <div class="timeline-item-content">
+                            <ul class="list-disc list-inside text-stone-600 space-y-1 mt-2">
+                                ${job.description.map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function renderProjects() {
+                const grid = document.getElementById('projects-grid');
+                grid.innerHTML = cvData.projects.map(project => `
+                    <div class="bg-white rounded-lg shadow-md p-6 flex flex-col justify-between hover:shadow-xl hover:scale-105 transition-all">
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">${project.name}</h3>
+                            <p class="text-stone-600 mb-4">${project.description}</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                ${project.tech.map(t => `<span class="bg-stone-200 text-stone-700 text-xs font-semibold px-2 py-1 rounded-full">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="flex space-x-4 mt-auto">
+                            ${project.github ? `<a href="${project.github}" target="_blank" class="text-teal-600 hover:underline">GitHub</a>` : ''}
+                            ${project.live ? `<a href="${project.live}" target="_blank" class="text-teal-600 hover:underline">Demo</a>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function renderEducationAndCourses() {
+                const educationList = document.getElementById('education-list');
+                educationList.innerHTML += cvData.education.map(edu => `
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-lg">${edu.course}</h4>
+                        <p class="text-stone-600">${edu.institution}</p>
+                        <p class="text-sm text-stone-500">${edu.period}</p>
+                    </div>
+                `).join('');
+
+                const coursesList = document.getElementById('courses-list');
+                coursesList.innerHTML += cvData.courses.map(course => `
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-lg">${course.name}</h4>
+                        <p class="text-stone-600">${course.institution} - ${course.year}</p>
+                    </div>
+                `).join('');
+            }
+            
+            // --- LÓGICA DO GRÁFICO DE HABILIDADES ---
+
+            const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+            let skillsChart;
+            const skillsData = cvData.skills;
+            const skillCategories = Object.keys(skillsData);
+
+            function createOrUpdateChart(category) {
+                const data = skillsData[category];
+                const chartData = {
+                    labels: data.map(skill => skill.name),
+                    datasets: [{
+                        label: `Proficiência em ${category}`,
+                        data: data.map(skill => skill.level),
+                        backgroundColor: 'rgba(20, 184, 166, 0.6)', // teal-500 com opacidade
+                        borderColor: 'rgba(15, 118, 110, 1)', // teal-600
+                        borderWidth: 1
+                    }]
+                };
+
+                if (skillsChart) {
+                    skillsChart.data = chartData;
+                    skillsChart.update();
+                } else {
+                    skillsChart = new Chart(skillsCtx, {
+                        type: 'bar',
+                        data: chartData,
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                     callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed.x !== null) {
+                                                label += context.parsed.x + '%';
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            function renderSkillFilters() {
+                const filtersContainer = document.getElementById('skills-filters');
+                filtersContainer.innerHTML = skillCategories.map((category, index) => `
+                    <button class="skill-filter px-4 py-2 rounded-md transition-colors ${index === 0 ? 'bg-teal-500 text-white' : 'bg-stone-200 hover:bg-stone-300'}" data-category="${category}">
+                        ${category}
+                    </button>
+                `).join('');
+            }
+            
+            // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+
+            renderHeader();
+            renderExperience();
+            renderProjects();
+            renderEducationAndCourses();
+            renderSkillFilters();
+            createOrUpdateChart(skillCategories[0]);
+
+            // Event listener para filtros de habilidades
+            document.querySelectorAll('.skill-filter').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.skill-filter').forEach(btn => {
+                        btn.classList.remove('bg-teal-500', 'text-white');
+                        btn.classList.add('bg-stone-200', 'hover:bg-stone-300');
+                    });
+                    this.classList.add('bg-teal-500', 'text-white');
+                    this.classList.remove('bg-stone-200', 'hover:bg-stone-300');
+                    createOrUpdateChart(this.dataset.category);
+                });
+            });
+
+            // Event listener para expandir/recolher experiência
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    item.classList.toggle('open');
+                });
+            });
+            
+            // Navegação e highlight do link ativo
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { threshold: 0.5 }); // Ativa quando 50% da seção estiver visível
+
+            sections.forEach(section => observer.observe(section));
+
+        });
+    </script>
+</body>
+</html>
